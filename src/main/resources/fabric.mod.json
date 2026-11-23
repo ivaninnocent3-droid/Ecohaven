@@ -1,34 +1,29 @@
+
 {
-	"schemaVersion": 1,
-	"id": "ecohaven",
-	"version": "${version}",
-	"name": "Ecohaven",
-	"description": "This is an example description! Tell everyone what your mod is about!",
-	"authors": [
-		"Me!"
-	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
-	"license": "CC0-1.0",
-	"icon": "assets/ecohaven/icon.png",
-	"environment": "*",
-	"entrypoints": {
-		"main": [
-			"io.github.ivaninnocent3droid.ecohaven.Ecohaven"
-		],
-		"fabric-datagen": [
-			"io.github.ivaninnocent3droid.ecohaven.EcohavenDataGenerator"
-		]
-	},
-	"mixins": [
-		"ecohaven.mixins.json"
-	],
-	"depends": {
-		"fabricloader": ">=0.20.1",
-		"minecraft": "~26.3",
-		"java": ">=25",
-		"fabric-api": "*"
-	}
+  "schemaVersion": 1,
+  "id": "ecohaven",
+  "version": "${version}",
+  "name": "Ecohaven",
+  "description": "A terrain and world-generation mod focused on shaping continents, coastlines, islands, and natural landscapes.",
+  "contact": {
+    "homepage": "https://github.com/ivaninnocent3-droid/Ecohaven",
+    "sources": "https://github.com/ivaninnocent3-droid/Ecohaven"
+  },
+  "license": "CC0-1.0",
+  "icon": "assets/ecohaven/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.ivaninnocent3droid.ecohaven.Ecohaven"
+    ],
+    "fabric-datagen": [
+      "io.github.ivaninnocent3droid.ecohaven.EcohavenDataGenerator"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
 }
