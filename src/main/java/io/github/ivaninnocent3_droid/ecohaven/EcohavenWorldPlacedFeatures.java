@@ -44,5 +44,19 @@ public class EcohavenWorldPlacedFeatures {
                     )
             );
         }
+        PlacementUtils.register(
+                context,
+                WoodlandSurfaceFeature.PLACED_FEATURE_KEY,
+                features.getOrThrow(
+                        WoodlandSurfaceFeature.FEATURE_KEY
+                ),
+
+                // One feature execution per chunk.
+                CountPlacement.of(1),
+
+                InSquarePlacement.spread(),
+                PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
+                BiomeFilter.biome()
+        );
     }
 }

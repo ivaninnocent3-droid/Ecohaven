@@ -18,7 +18,6 @@ public class Ecohaven implements ModInitializer {
 
     private static final String[] VANILLA_TREE_FEATURES = {
             "trees_plains",
-            "trees_sparse",
             "trees_birch",
             "trees_birch_and_oak",
             "trees_water",
@@ -58,6 +57,8 @@ public class Ecohaven implements ModInitializer {
     public void onInitialize() {
         LOGGER.info("Ecohaven initialised.");
 
+        WoodlandSurfaceFeature.register();
+
         for (EcohavenTreeProfiles.BiomeProfile profile :
                 EcohavenTreeProfiles.profiles()) {
 
@@ -71,23 +72,6 @@ public class Ecohaven implements ModInitializer {
                     context -> {
                         var generation = context.getGenerationSettings();
 
-                        // Remove vanilla tree features from this biome.
-                        for (String name : VANILLA_TREE_FEATURES) {
-                            ResourceKey<PlacedFeature> vanillaTree =
-                                    ResourceKey.create(
-                                            Registries.PLACED_FEATURE,
-                                            Identifier.fromNamespaceAndPath(
-                                                    "minecraft",
-                                                    name
-                                            )
-                                    );
-
-                            generation.removeFeature(
-                                    GenerationStep.Decoration.VEGETAL_DECORATION,
-                                    vanillaTree
-                            );
-                        }
-
                         // Add this biome's configured Ecohaven trees.
                         for (EcohavenTreeProfiles.TreeSpawn tree :
                                 profile.trees()) {
@@ -97,6 +81,11 @@ public class Ecohaven implements ModInitializer {
                                     EcohavenTreeProfiles.placedFeatureKey(tree)
                             );
                         }
+                        // Add woodland surface generation after the custom trees.
+                        generation.addFeature(
+                                GenerationStep.Decoration.VEGETAL_DECORATION,
+                                WoodlandSurfaceFeature.PLACED_FEATURE_KEY
+                        );
                     }
             );
         }

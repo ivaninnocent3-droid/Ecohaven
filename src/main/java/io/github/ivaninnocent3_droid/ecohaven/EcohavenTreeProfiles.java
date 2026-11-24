@@ -6,6 +6,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.resources.Identifier;
 
 public final class EcohavenTreeProfiles {
 
@@ -80,7 +81,10 @@ public final class EcohavenTreeProfiles {
 
             new BiomeProfile(
                     "forest",
-                    biomeKey("forest"),
+                    ResourceKey.create(
+                            Registries.BIOME,
+                            Identifier.fromNamespaceAndPath("minecraft", "forest")
+                    ),
                     List.of(
                             new TreeSpawn(
                                     "forest_oak_scattered",

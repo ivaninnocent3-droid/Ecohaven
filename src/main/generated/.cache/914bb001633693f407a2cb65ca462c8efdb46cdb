@@ -1,5 +1,7 @@
 // 26.3	-999999999-01-01T00:00:00	Ecohaven/Ecohaven World Generation
 80a29825e6b9513fed36fee6107c544488e24435 data/ecohaven/worldgen/feature/tree_features/forest_oak_clumped.json
 80a29825e6b9513fed36fee6107c544488e24435 data/ecohaven/worldgen/feature/tree_features/forest_oak_scattered.json
+f91bfa152d6a1ef22bce58f2e523d07cf5014aee data/ecohaven/worldgen/feature/woodland_surface.json
 55485be6f0e2869135e39176ba8f50354b6bcac4 data/ecohaven/worldgen/placed_feature/tree_placements/forest_oak_clumped.json
 90bda69eef2a952f39830972b6741f3bd76e12f8 data/ecohaven/worldgen/placed_feature/tree_placements/forest_oak_scattered.json
+2950af319ce6cfdfbd9b99a66273e33a4ed974c0 data/ecohaven/worldgen/placed_feature/woodland_surface.json

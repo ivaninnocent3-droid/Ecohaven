@@ -29,5 +29,9 @@ public class EcohavenWorldFeatures {
                     feature
             );
         }
+        context.register(
+                WoodlandSurfaceFeature.FEATURE_KEY,
+                new WoodlandSurfaceFeature()
+        );
     }
 }
