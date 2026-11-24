@@ -11,56 +11,27 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.world.level.biome.Biome;
 
 public class Ecohaven implements ModInitializer {
     public static final String MOD_ID = "ecohaven";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    private static final String[] VANILLA_TREE_FEATURES = {
-            "trees_plains",
-            "trees_birch",
-            "trees_birch_and_oak",
-            "trees_water",
-            "trees_taiga",
-            "trees_grove",
-            "trees_windswept_savanna",
-            "trees_savanna",
-            "trees_badlands",
-            "trees_old_growth_taiga",
-            "trees_dark_forest",
-            "trees_jungle",
-            "trees_mangrove",
-            "trees_cherry",
-            "trees_pale_garden",
-            "oak",
-            "fancy_oak",
-            "oak_bees_0002",
-            "fancy_oak_bees_0002",
-            "birch",
-            "birch_bees_0002",
-            "super_birch_bees_0002",
-            "pine",
-            "spruce",
-            "mega_spruce",
-            "mega_pine",
-            "jungle_tree",
-            "mega_jungle_tree",
-            "acacia",
-            "dark_oak",
-            "swamp_oak",
-            "mangrove",
-            "cherry",
-            "pale_oak"
-    };
+
 
     @Override
     public void onInitialize() {
         LOGGER.info("Ecohaven initialised.");
 
+        ServerLifecycleEvents.SERVER_STARTED.register(
+                Ecohaven::logBiomeFeatures
+        );
+
         WoodlandSurfaceFeature.register();
 
         for (EcohavenTreeProfiles.BiomeProfile profile :
-                EcohavenTreeProfiles.profiles()) {
+        EcohavenTreeProfiles.profiles()) {
 
             var selector = BiomeSelectors.includeByKey(profile.biome());
 
@@ -72,7 +43,22 @@ public class Ecohaven implements ModInitializer {
                     context -> {
                         var generation = context.getGenerationSettings();
 
-                        // Add this biome's configured Ecohaven trees.
+                        // Remove only the vanilla tree features assigned to this biome.
+                        for (String vanillaTreeFeature :
+                                profile.vanillaTreeFeaturesToRemove()) {
+
+                            generation.removeFeature(
+                                    ResourceKey.create(
+                                            Registries.PLACED_FEATURE,
+                                            Identifier.fromNamespaceAndPath(
+                                                    "minecraft",
+                                                    vanillaTreeFeature
+                                            )
+                                    )
+                            );
+                        }
+
+                        // Add this biome's custom Ecohaven trees.
                         for (EcohavenTreeProfiles.TreeSpawn tree :
                                 profile.trees()) {
 
@@ -81,7 +67,8 @@ public class Ecohaven implements ModInitializer {
                                     EcohavenTreeProfiles.placedFeatureKey(tree)
                             );
                         }
-                        // Add woodland surface generation after the custom trees.
+
+                        // Add woodland surface generation.
                         generation.addFeature(
                                 GenerationStep.Decoration.VEGETAL_DECORATION,
                                 WoodlandSurfaceFeature.PLACED_FEATURE_KEY
@@ -93,5 +80,40 @@ public class Ecohaven implements ModInitializer {
 
     public static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(MOD_ID, path);
+    }
+    
+    private static void logBiomeFeatures(
+            net.minecraft.server.MinecraftServer server
+    ) {
+        var biomeRegistry = server.registryAccess()
+                .lookupOrThrow(Registries.BIOME);
+
+        LOGGER.info("========== ECohaven BIOME FEATURE REPORT ==========");
+
+        for (var biomeId : biomeRegistry.keySet()) {
+            var biomeEntry = biomeRegistry.get(biomeId);
+
+            if (biomeEntry.isEmpty()) {
+                continue;
+            }
+
+            Biome biome = biomeEntry.get().value();
+
+            if (biome == null) {
+                continue;
+            }
+
+            LOGGER.info("BIOME: {}", biomeId);
+
+            for (var featureStep : biome.getGenerationSettings().features()) {
+                for (var featureHolder : featureStep) {
+                    featureHolder.unwrapKey().ifPresent(key ->
+                            LOGGER.info("  FEATURE: {}", key)
+                    );
+                }
+            }
+        }
+
+        LOGGER.info("========== END BIOME FEATURE REPORT ==========");
     }
 }

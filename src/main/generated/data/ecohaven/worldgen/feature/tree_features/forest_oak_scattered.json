@@ -17,6 +17,24 @@
         "id": "ecohaven:trees/oak_01"
       },
       "weight": 1
+    },
+    {
+      "data": {
+        "id": "ecohaven:trees/oak_02"
+      },
+      "weight": 1
+    },
+    {
+      "data": {
+        "id": "ecohaven:trees/oak_03"
+      },
+      "weight": 1
+    },
+    {
+      "data": {
+        "id": "ecohaven:trees/oak_04"
+      },
+      "weight": 1
     }
   ]
 }
