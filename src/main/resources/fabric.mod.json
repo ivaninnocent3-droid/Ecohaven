@@ -14,10 +14,10 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "io.github.ivaninnocent3droid.ecohaven.Ecohaven"
+      "io.github.ivaninnocent3_droid.ecohaven.Ecohaven"
     ],
     "fabric-datagen": [
-      "io.github.ivaninnocent3droid.ecohaven.EcohavenDataGenerator"
+      "io.github.ivaninnocent3_droid.ecohaven.EcohavenDataGenerator"
     ]
   },
   "depends": {
