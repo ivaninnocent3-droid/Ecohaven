@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:template",
+  "processors": {
+    "processors": [
+      {
+        "blocks": [
+          "minecraft:air",
+          "minecraft:structure_block"
+        ],
+        "processor_type": "minecraft:block_ignore"
+      }
+    ]
+  },
+  "templates": [
+    {
+      "data": {
+        "id": "ecohaven:trees/oak_01"
+      },
+      "weight": 1
+    }
+  ]
+}

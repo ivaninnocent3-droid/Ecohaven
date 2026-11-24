@@ -1,9 +1,13 @@
 {
-  "feature": "ecohaven:tall_oak_tree",
+  "feature": "ecohaven:tree_features/forest_oak_clumped",
   "placement": [
     {
       "type": "minecraft:rarity_filter",
-      "chance": 5
+      "chance": 12
+    },
+    {
+      "type": "minecraft:count",
+      "count": 4
     },
     {
       "type": "minecraft:in_square"
