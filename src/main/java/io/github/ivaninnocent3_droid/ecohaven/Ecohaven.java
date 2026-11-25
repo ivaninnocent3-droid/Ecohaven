@@ -11,6 +11,8 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.VegetationFeature;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.world.level.biome.Biome;
 
@@ -72,6 +74,10 @@ public class Ecohaven implements ModInitializer {
                         generation.addFeature(
                                 GenerationStep.Decoration.VEGETAL_DECORATION,
                                 WoodlandSurfaceFeature.PLACED_FEATURE_KEY
+                        );
+                        generation.addFeature(
+                                GenerationStep.Decoration.VEGETAL_DECORATION,
+                                VegetationFeature.PLACED_FEATURE_KEY
                         );
                     }
             );

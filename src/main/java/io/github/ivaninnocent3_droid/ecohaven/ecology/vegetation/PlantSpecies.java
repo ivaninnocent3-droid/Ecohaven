@@ -43,12 +43,15 @@ public final class PlantSpecies {
      */
     private final float spreadChance;
 
+    private final float exposurePreference;
+
     public PlantSpecies(
             String id,
             Block block,
             int weight,
             float shadeTolerance,
             float moisturePreference,
+            float exposurePreference,
             float spreadChance
     ) {
         this.id = Objects.requireNonNull(id, "id");
@@ -75,11 +78,18 @@ public final class PlantSpecies {
                     "spreadChance must be between 0 and 1"
             );
         }
+        if (exposurePreference < 0.0F
+                || exposurePreference > 1.0F) {
+            throw new IllegalArgumentException(
+                    "exposurePreference must be between 0 and 1"
+            );
+        }
 
         this.weight = weight;
         this.shadeTolerance = shadeTolerance;
         this.moisturePreference = moisturePreference;
         this.spreadChance = spreadChance;
+        this.exposurePreference = exposurePreference;
     }
 
     public String id() {
@@ -104,5 +114,8 @@ public final class PlantSpecies {
 
     public float spreadChance() {
         return spreadChance;
+    }
+    public float exposurePreference() {
+        return exposurePreference;
     }
 }

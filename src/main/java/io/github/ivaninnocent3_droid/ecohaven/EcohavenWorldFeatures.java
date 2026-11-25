@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.VegetationFeature;
 import net.minecraft.core.Holder;
 import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.Identifier;
@@ -94,6 +95,11 @@ public class EcohavenWorldFeatures {
         context.register(
                 WoodlandSurfaceFeature.FEATURE_KEY,
                 new WoodlandSurfaceFeature()
+        );
+
+        context.register(
+                VegetationFeature.FEATURE_KEY,
+                new VegetationFeature()
         );
     }
 }

@@ -1,5 +1,6 @@
 package io.github.ivaninnocent3_droid.ecohaven;
 
+import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.VegetationFeature;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstrapContext;
@@ -47,6 +48,17 @@ public class EcohavenWorldPlacedFeatures {
                 WoodlandSurfaceFeature.PLACED_FEATURE_KEY,
                 features.getOrThrow(
                         WoodlandSurfaceFeature.FEATURE_KEY
+                ),
+                CountPlacement.of(1),
+                InSquarePlacement.spread(),
+                PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
+                BiomeFilter.biome()
+        );
+                PlacementUtils.register(
+                context,
+                VegetationFeature.PLACED_FEATURE_KEY,
+                features.getOrThrow(
+                        VegetationFeature.FEATURE_KEY
                 ),
                 CountPlacement.of(1),
                 InSquarePlacement.spread(),
