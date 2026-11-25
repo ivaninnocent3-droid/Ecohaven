@@ -18,6 +18,8 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 import java.util.List;
 
@@ -275,90 +277,123 @@ private static PlantSpecies selectSpecies(
         float exposure,
         RandomSource random
 ) {
-        int totalWeight = 0;
+    int totalWeight = 0;
 
-        for (PlantSpecies plant : species) {
+    // First pass: calculate the total ecological selection weight.
+    for (PlantSpecies plant : species) {
 
-        float shadeMatch =
-                preferenceMatch(
-                        shade,
-                        plant.shadeTolerance()
-                );
+        float shadeMatch = preferenceMatch(
+                shade,
+                plant.shadeTolerance()
+        );
 
-        float moistureMatch =
-                preferenceMatch(
-                        moisture,
-                        plant.moisturePreference()
-                );
+        float moistureMatch = preferenceMatch(
+                moisture,
+                plant.moisturePreference()
+        );
 
-        float exposureMatch =
-                preferenceMatch(
-                        exposure,
-                        plant.exposurePreference()
-                );
+        float exposureMatch = preferenceMatch(
+                exposure,
+                plant.exposurePreference()
+        );
+
+        float roleMatch = roleSuitability(
+                plant.role(),
+                shade
+        );
 
         float suitability =
                 shadeMatch
                 * moistureMatch
-                * exposureMatch;
+                * exposureMatch
+                * roleMatch;
 
-            if (suitability <= 0.0F) {
-                continue;
-            }
-
-            totalWeight += Math.max(
-                    1,
-                    Math.round(
-                            plant.weight() * suitability
-                    )
-            );
+        if (suitability <= 0.0F) {
+            continue;
         }
 
-        if (totalWeight <= 0) {
-            return null;
-        }
+        totalWeight += Math.max(
+                1,
+                Math.round(plant.weight() * suitability)
+        );
+    }
 
-        int selection =
-                random.nextInt(totalWeight);
-
-        for (PlantSpecies plant : species) {
-
-            float shadeMatch =
-                    preferenceMatch(
-                            shade,
-                            plant.shadeTolerance()
-                    );
-
-            float moistureMatch =
-                    preferenceMatch(
-                            moisture,
-                            plant.moisturePreference()
-                    );
-
-            float suitability =
-                    shadeMatch * moistureMatch;
-
-            if (suitability <= 0.0F) {
-                continue;
-            }
-
-            int weight =
-                    Math.max(
-                            1,
-                            Math.round(
-                                    plant.weight() * suitability
-                            )
-                    );
-
-            if (selection < weight) {
-                return plant;
-            }
-
-            selection -= weight;
-        }
-
+    if (totalWeight <= 0) {
         return null;
     }
+
+    int selection = random.nextInt(totalWeight);
+
+    // Second pass: select using exactly the same weights.
+    for (PlantSpecies plant : species) {
+
+        float shadeMatch = preferenceMatch(
+                shade,
+                plant.shadeTolerance()
+        );
+
+        float moistureMatch = preferenceMatch(
+                moisture,
+                plant.moisturePreference()
+        );
+
+        float exposureMatch = preferenceMatch(
+                exposure,
+                plant.exposurePreference()
+        );
+
+        float roleMatch = roleSuitability(
+                plant.role(),
+                shade
+        );
+
+        float suitability =
+                shadeMatch
+                * moistureMatch
+                * exposureMatch
+                * roleMatch;
+
+        if (suitability <= 0.0F) {
+            continue;
+        }
+
+        int weight = Math.max(
+                1,
+                Math.round(plant.weight() * suitability)
+        );
+
+        if (selection < weight) {
+            return plant;
+        }
+
+        selection -= weight;
+    }
+
+    return null;
+}
+
+/**
+ * Adds a broad ecological preference based on the plant's role.
+ *
+ * Species-specific shade tolerance still provides the detailed
+ * preference. This role multiplier distinguishes open-ground
+ * vegetation from plants adapted to woodland understories.
+ */
+private static float roleSuitability(
+        PlantRole role,
+        float shade
+) {
+    return switch (role) {
+        case GROUND_COVER ->
+                1.0F - (shade * 0.25F);
+
+        case UNDERSTORY ->
+                0.35F + (shade * 0.65F);
+
+        case SPECIAL ->
+                1.0F;
+    };
+}
 
     /**
      * Converts the distance between an environmental value and
@@ -468,10 +503,6 @@ private static boolean placePatch(
         species = null;
         }
 
-        if (species == null) {
-            continue;
-        }
-
         changed |= placeVegetation(
                 level,
                 profile,
@@ -546,20 +577,75 @@ private static boolean placeVegetation(
         return false;
     }
 
-    BlockState plantState =
-            species.block().defaultBlockState();
+BlockState plantState =
+        species.block().defaultBlockState();
+
+if (species.growthForm() == PlantGrowthForm.SINGLE_BLOCK) {
 
     if (!plantState.canSurvive(level, plantPos)) {
         return false;
     }
 
-    level.setBlock(
+    return level.setBlock(
             plantPos,
             plantState,
             2
     );
+}
 
-    return true;
+// Double-block plants must use Minecraft's double-plant block.
+if (!(species.block() instanceof DoublePlantBlock)) {
+    return false;
+}
+
+BlockPos upperPos = plantPos.above();
+
+// Both positions must be clear before placement.
+if (!level.getBlockState(upperPos).isAir()) {
+    return false;
+}
+
+BlockState lowerState = plantState.setValue(
+        DoublePlantBlock.HALF,
+        DoubleBlockHalf.LOWER
+);
+
+BlockState upperState = plantState.setValue(
+        DoublePlantBlock.HALF,
+        DoubleBlockHalf.UPPER
+);
+
+// Check the lower half against the ground first.
+if (!lowerState.canSurvive(level, plantPos)) {
+    return false;
+}
+
+// Place the lower half before checking the upper half.
+if (!level.setBlock(plantPos, lowerState, 2)) {
+    return false;
+}
+
+if (!upperState.canSurvive(level, upperPos)) {
+    level.setBlock(
+            plantPos,
+            Blocks.AIR.defaultBlockState(),
+            2
+    );
+
+    return false;
+}
+
+if (!level.setBlock(upperPos, upperState, 2)) {
+    level.setBlock(
+            plantPos,
+            Blocks.AIR.defaultBlockState(),
+            2
+    );
+
+    return false;
+}
+
+return true;
 }
 
 private static boolean placeSpreadingVegetation(

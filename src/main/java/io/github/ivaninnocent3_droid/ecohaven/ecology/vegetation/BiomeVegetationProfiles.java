@@ -1,5 +1,7 @@
 package io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation;
 
+import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.*;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -64,7 +66,8 @@ public final class BiomeVegetationProfiles {
                             PlantSpeciesRegistry.LARGE_FERN,
                             PlantSpeciesRegistry.DANDELION,
                             PlantSpeciesRegistry.POPPY,
-                            PlantSpeciesRegistry.OXEYE_DAISY
+                            PlantSpeciesRegistry.OXEYE_DAISY,
+                            PlantSpeciesRegistry.LILY_OF_THE_VALLEY
                     ),
                     20,
                     0.18F,
@@ -79,7 +82,8 @@ public final class BiomeVegetationProfiles {
                             PlantSpeciesRegistry.FERN,
                             PlantSpeciesRegistry.LARGE_FERN,
                             PlantSpeciesRegistry.DANDELION,
-                            PlantSpeciesRegistry.OXEYE_DAISY
+                            PlantSpeciesRegistry.OXEYE_DAISY,
+                            PlantSpeciesRegistry.LILY_OF_THE_VALLEY
                     ),
                     20,
                     0.20F,
@@ -95,7 +99,9 @@ public final class BiomeVegetationProfiles {
                             PlantSpeciesRegistry.DANDELION,
                             PlantSpeciesRegistry.POPPY,
                             PlantSpeciesRegistry.OXEYE_DAISY,
-                            PlantSpeciesRegistry.FERN
+                            PlantSpeciesRegistry.FERN,
+                            PlantSpeciesRegistry.ALLIUM,
+                            PlantSpeciesRegistry.LILY_OF_THE_VALLEY
                     ),
                     24,
                     0.35F,
@@ -177,7 +183,8 @@ public final class BiomeVegetationProfiles {
                             PlantSpeciesRegistry.TALL_GRASS,
                             PlantSpeciesRegistry.DANDELION,
                             PlantSpeciesRegistry.POPPY,
-                            PlantSpeciesRegistry.OXEYE_DAISY
+                            PlantSpeciesRegistry.OXEYE_DAISY,
+                            PlantSpeciesRegistry.CORNFLOWER
                     ),
                     30,
                     0.38F,
@@ -225,7 +232,8 @@ public final class BiomeVegetationProfiles {
                             PlantSpeciesRegistry.FERN,
                             PlantSpeciesRegistry.LARGE_FERN,
                             PlantSpeciesRegistry.SHORT_GRASS,
-                            PlantSpeciesRegistry.TALL_GRASS
+                            PlantSpeciesRegistry.TALL_GRASS,
+                            PlantSpeciesRegistry.BLUE_ORCHID
                     ),
                     28,
                     0.30F,
