@@ -40,8 +40,10 @@ public final class WoodlandSurfaceFeature implements Feature {
                     Ecohaven.id("woodland_surface")
             );
 
-    private static final float PATCHED_GRASS_CHANCE = 0.85F;
+    private static final float MAX_PATCHED_GRASS_CHANCE = 0.85F;
+
     private static final int COVER_SCAN_HEIGHT = 16;
+    private static final int COVER_INFLUENCE_RADIUS = 6;
 
     public static void register() {
         Registry.register(
@@ -72,42 +74,88 @@ public final class WoodlandSurfaceFeature implements Feature {
             return false;
         }
 
-        // The placement origin is inside the chunk being processed.
         int startX = origin.getX() & ~15;
         int startZ = origin.getZ() & ~15;
 
-        boolean changed = false;
+        int[][] surfaceHeights = new int[16][16];
+        boolean[][] coveredColumns = new boolean[16][16];
 
-        // Process each column in this chunk exactly once.
-        for (int x = startX; x < startX + 16; x++) {
-            for (int z = startZ; z < startZ + 16; z++) {
+        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
 
-                // Find the top of the ground, ignoring leaves.
+        // PASS 1: Find the ground height and overhead cover.
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+
+                int worldX = startX + x;
+                int worldZ = startZ + z;
+
                 int surfaceY = level.getHeight(
                         Heightmap.Types.OCEAN_FLOOR_WG,
-                        x,
-                        z
+                        worldX,
+                        worldZ
                 ) - 1;
 
-                BlockPos groundPos = new BlockPos(x, surfaceY, z);
+                surfaceHeights[x][z] = surfaceY;
+
+                BlockPos groundPos = new BlockPos(
+                        worldX,
+                        surfaceY,
+                        worldZ
+                );
+
                 BlockState groundState = level.getBlockState(groundPos);
 
-                // Only alter ordinary grass and dirt surfaces.
                 if (!groundState.is(Blocks.GRASS_BLOCK)
                         && !groundState.is(Blocks.DIRT)) {
                     continue;
                 }
 
-                boolean covered = hasOverheadCover(level, groundPos);
+                coveredColumns[x][z] =
+                        hasOverheadCover(level, groundPos, checkPos);
+            }
+        }
+
+        boolean changed = false;
+
+        // PASS 2: Generate patched grass based on nearby cover.
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+
+                int worldX = startX + x;
+                int worldZ = startZ + z;
+                int surfaceY = surfaceHeights[x][z];
+
+                BlockPos groundPos = new BlockPos(
+                        worldX,
+                        surfaceY,
+                        worldZ
+                );
+
+                BlockState groundState = level.getBlockState(groundPos);
+
+                if (!groundState.is(Blocks.GRASS_BLOCK)
+                        && !groundState.is(Blocks.DIRT)) {
+                    continue;
+                }
+
+                float chance = getPatchedGrassChance(
+                        coveredColumns,
+                        x,
+                        z
+                );
 
                 BlockState replacement;
 
-                if (covered) {
-                    if (random.nextFloat() < PATCHED_GRASS_CHANCE) {
+                if (coveredColumns[x][z]) {
+                    // Directly beneath cover: high patched grass density.
+                    if (random.nextFloat() < MAX_PATCHED_GRASS_CHANCE) {
                         replacement = patchedGrass.defaultBlockState();
                     } else {
                         replacement = Blocks.DIRT.defaultBlockState();
                     }
+                } else if (random.nextFloat() < chance) {
+                    // Near cover: progressively lower patched grass density.
+                    replacement = patchedGrass.defaultBlockState();
                 } else {
                     replacement = Blocks.GRASS_BLOCK.defaultBlockState();
                 }
@@ -122,13 +170,59 @@ public final class WoodlandSurfaceFeature implements Feature {
         return changed;
     }
 
+    private static float getPatchedGrassChance(
+            boolean[][] covered,
+            int x,
+            int z
+    ) {
+        int radius = COVER_INFLUENCE_RADIUS;
+        int radiusSquared = radius * radius;
+
+        int nearestDistanceSquared = Integer.MAX_VALUE;
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+
+                int distanceSquared = dx * dx + dz * dz;
+
+                if (distanceSquared > radiusSquared
+                        || distanceSquared >= nearestDistanceSquared) {
+                    continue;
+                }
+
+                int checkX = x + dx;
+                int checkZ = z + dz;
+
+                if (checkX < 0 || checkX >= 16
+                        || checkZ < 0 || checkZ >= 16) {
+                    continue;
+                }
+
+                if (covered[checkX][checkZ]) {
+                    nearestDistanceSquared = distanceSquared;
+                }
+            }
+        }
+
+        if (nearestDistanceSquared == Integer.MAX_VALUE) {
+            return 0.0F;
+        }
+
+        float distance = (float) Math.sqrt(nearestDistanceSquared);
+
+        float falloff = 1.0F
+                - distance / (COVER_INFLUENCE_RADIUS + 1.0F);
+
+        return MAX_PATCHED_GRASS_CHANCE * falloff;
+    }
+
     private static boolean hasOverheadCover(
             WorldGenLevel level,
-            BlockPos groundPos
+            BlockPos groundPos,
+            BlockPos.MutableBlockPos checkPos
     ) {
-        BlockPos.MutableBlockPos checkPos = groundPos.mutable();
-
         for (int y = 1; y <= COVER_SCAN_HEIGHT; y++) {
+
             checkPos.set(
                     groundPos.getX(),
                     groundPos.getY() + y,

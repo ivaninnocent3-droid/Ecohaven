@@ -30,12 +30,14 @@ dependencies {
     implementation files("../Ecology/build/libs/ecology-1.0.0.jar")
 }
 processResources {
-	def version = project.version
-	inputs.property "version", version
+    exclude '.cache/**'
 
-	filesMatching("fabric.mod.json") {
-		expand "version": version
-	}
+    def version = project.version
+    inputs.property "version", version
+
+    filesMatching("fabric.mod.json") {
+        // Keep your existing contents here
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {

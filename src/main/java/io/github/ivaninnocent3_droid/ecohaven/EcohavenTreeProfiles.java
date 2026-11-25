@@ -182,7 +182,7 @@ public final class EcohavenTreeProfiles {
 
                 // Temperate forests
                 oakProfile("forest", "forest",
-                        "trees_birch_and_oak_leaf_litter", 5, 12, 4),
+                        "trees_birch_and_oak_leaf_litter", 1, 2, 4),
 
                 oakProfile("birch_forest", "birch_forest",
                         "trees_birch", 5, 12, 3),
