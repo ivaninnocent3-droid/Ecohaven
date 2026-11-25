@@ -150,10 +150,10 @@ public final class WoodlandSurfaceFeature implements Feature {
                     level.getBlockState(checkPos);
 
             if (state.is(BlockTags.LEAVES)
-                    || state.is(BlockTags.LOGS)
-                    || state.isSolid()) {
-                return true;
-            }
+                || state.is(BlockTags.LOGS)
+                || state.getLightDampening() >= 15) {
+            return true;
+        }
         }
 
         return false;

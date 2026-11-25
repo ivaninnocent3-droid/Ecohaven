@@ -391,7 +391,7 @@ public final class VegetationGrowth {
 
             if (state.is(net.minecraft.tags.BlockTags.LEAVES)) {
                 shade += 2;
-            } else if (state.isSolid()) {
+            } else if (state.getLightDampening() >= 15) {
                 shade += 2;
             }
         }

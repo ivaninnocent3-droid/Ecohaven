@@ -194,7 +194,7 @@ public final class VegetationFeature implements Feature {
                 shadeBlocks += 2;
             } else if (state.is(BlockTags.LOGS)) {
                 shadeBlocks++;
-            } else if (state.isSolid()) {
+            } else if (state.getLightDampening() >= 15) {
                 shadeBlocks += 2;
             }
         }
