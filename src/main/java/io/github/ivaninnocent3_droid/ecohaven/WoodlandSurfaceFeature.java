@@ -1,24 +1,22 @@
-
 package io.github.ivaninnocent3_droid.ecohaven;
 
 import com.mojang.serialization.MapCodec;
-
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.core.Registry;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
-import net.minecraft.world.level.chunk.ChunkGenerator;
 
 public final class WoodlandSurfaceFeature implements Feature {
 
@@ -40,10 +38,8 @@ public final class WoodlandSurfaceFeature implements Feature {
                     Ecohaven.id("woodland_surface")
             );
 
-    private static final float MAX_PATCHED_GRASS_CHANCE = 0.85F;
-
+    private static final float PATCHED_GRASS_CHANCE = 0.85F;
     private static final int COVER_SCAN_HEIGHT = 16;
-    private static final int COVER_INFLUENCE_RADIUS = 6;
 
     public static void register() {
         Registry.register(
@@ -65,11 +61,13 @@ public final class WoodlandSurfaceFeature implements Feature {
             RandomSource random,
             BlockPos origin
     ) {
-        Block patchedGrass = BuiltInRegistries.BLOCK.getValue(PATCHED_GRASS_ID);
+        Block patchedGrass =
+                BuiltInRegistries.BLOCK.getValue(PATCHED_GRASS_ID);
 
         if (patchedGrass == Blocks.AIR) {
             Ecohaven.LOGGER.error(
-                    "Could not find ecology:patched_grass. Check the ecology dependency."
+                    "Could not find ecology:patched_grass. " +
+                    "Check the ecology dependency."
             );
             return false;
         }
@@ -77,91 +75,53 @@ public final class WoodlandSurfaceFeature implements Feature {
         int startX = origin.getX() & ~15;
         int startZ = origin.getZ() & ~15;
 
-        int[][] surfaceHeights = new int[16][16];
-        boolean[][] coveredColumns = new boolean[16][16];
+        boolean changed = false;
 
-        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
-
-        // PASS 1: Find the ground height and overhead cover.
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-
-                int worldX = startX + x;
-                int worldZ = startZ + z;
+        for (int x = startX; x < startX + 16; x++) {
+            for (int z = startZ; z < startZ + 16; z++) {
 
                 int surfaceY = level.getHeight(
                         Heightmap.Types.OCEAN_FLOOR_WG,
-                        worldX,
-                        worldZ
-                ) - 1;
-
-                surfaceHeights[x][z] = surfaceY;
-
-                BlockPos groundPos = new BlockPos(
-                        worldX,
-                        surfaceY,
-                        worldZ
-                );
-
-                BlockState groundState = level.getBlockState(groundPos);
-
-                if (!groundState.is(Blocks.GRASS_BLOCK)
-                        && !groundState.is(Blocks.DIRT)) {
-                    continue;
-                }
-
-                coveredColumns[x][z] =
-                        hasOverheadCover(level, groundPos, checkPos);
-            }
-        }
-
-        boolean changed = false;
-
-        // PASS 2: Generate patched grass based on nearby cover.
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-
-                int worldX = startX + x;
-                int worldZ = startZ + z;
-                int surfaceY = surfaceHeights[x][z];
-
-                BlockPos groundPos = new BlockPos(
-                        worldX,
-                        surfaceY,
-                        worldZ
-                );
-
-                BlockState groundState = level.getBlockState(groundPos);
-
-                if (!groundState.is(Blocks.GRASS_BLOCK)
-                        && !groundState.is(Blocks.DIRT)) {
-                    continue;
-                }
-
-                float chance = getPatchedGrassChance(
-                        coveredColumns,
                         x,
                         z
-                );
+                ) - 1;
+
+                BlockPos groundPos =
+                        new BlockPos(x, surfaceY, z);
+
+                BlockState groundState =
+                        level.getBlockState(groundPos);
+
+                if (!groundState.is(Blocks.GRASS_BLOCK)
+                        && !groundState.is(Blocks.DIRT)) {
+                    continue;
+                }
+
+                boolean covered =
+                        hasOverheadCover(level, groundPos);
 
                 BlockState replacement;
 
-                if (coveredColumns[x][z]) {
-                    // Directly beneath cover: high patched grass density.
-                    if (random.nextFloat() < MAX_PATCHED_GRASS_CHANCE) {
-                        replacement = patchedGrass.defaultBlockState();
+                if (covered) {
+                    if (random.nextFloat() < PATCHED_GRASS_CHANCE) {
+                        replacement =
+                                patchedGrass.defaultBlockState();
                     } else {
-                        replacement = Blocks.DIRT.defaultBlockState();
+                        replacement =
+                                Blocks.DIRT.defaultBlockState();
                     }
-                } else if (random.nextFloat() < chance) {
-                    // Near cover: progressively lower patched grass density.
-                    replacement = patchedGrass.defaultBlockState();
                 } else {
-                    replacement = Blocks.GRASS_BLOCK.defaultBlockState();
+                    replacement =
+                            Blocks.GRASS_BLOCK.defaultBlockState();
                 }
 
                 if (!groundState.equals(replacement)) {
-                    level.setBlock(groundPos, replacement, 2);
+                    level.setBlock(
+                            groundPos,
+                            replacement,
+                            2
+                    );
+
                     changed = true;
                 }
             }
@@ -170,57 +130,13 @@ public final class WoodlandSurfaceFeature implements Feature {
         return changed;
     }
 
-    private static float getPatchedGrassChance(
-            boolean[][] covered,
-            int x,
-            int z
-    ) {
-        int radius = COVER_INFLUENCE_RADIUS;
-        int radiusSquared = radius * radius;
-
-        int nearestDistanceSquared = Integer.MAX_VALUE;
-
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-
-                int distanceSquared = dx * dx + dz * dz;
-
-                if (distanceSquared > radiusSquared
-                        || distanceSquared >= nearestDistanceSquared) {
-                    continue;
-                }
-
-                int checkX = x + dx;
-                int checkZ = z + dz;
-
-                if (checkX < 0 || checkX >= 16
-                        || checkZ < 0 || checkZ >= 16) {
-                    continue;
-                }
-
-                if (covered[checkX][checkZ]) {
-                    nearestDistanceSquared = distanceSquared;
-                }
-            }
-        }
-
-        if (nearestDistanceSquared == Integer.MAX_VALUE) {
-            return 0.0F;
-        }
-
-        float distance = (float) Math.sqrt(nearestDistanceSquared);
-
-        float falloff = 1.0F
-                - distance / (COVER_INFLUENCE_RADIUS + 1.0F);
-
-        return MAX_PATCHED_GRASS_CHANCE * falloff;
-    }
-
     private static boolean hasOverheadCover(
             WorldGenLevel level,
-            BlockPos groundPos,
-            BlockPos.MutableBlockPos checkPos
+            BlockPos groundPos
     ) {
+        BlockPos.MutableBlockPos checkPos =
+                groundPos.mutable();
+
         for (int y = 1; y <= COVER_SCAN_HEIGHT; y++) {
 
             checkPos.set(
@@ -229,7 +145,8 @@ public final class WoodlandSurfaceFeature implements Feature {
                     groundPos.getZ()
             );
 
-            BlockState state = level.getBlockState(checkPos);
+            BlockState state =
+                    level.getBlockState(checkPos);
 
             if (state.is(BlockTags.LEAVES)
                     || state.is(BlockTags.LOGS)
