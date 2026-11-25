@@ -16,7 +16,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
 import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
 
 public class EcohavenWorldPlacedFeatures {
@@ -82,6 +81,8 @@ public class EcohavenWorldPlacedFeatures {
         InSquarePlacement.spread(),
         PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
 
+        BiomeFilter.biome(),
+
         CountPlacement.of(32),
         OffsetPlacement.ofTriangle(7, 3),
 
@@ -93,9 +94,7 @@ public class EcohavenWorldPlacedFeatures {
                                 Blocks.GRASS_BLOCK
                         )
                 )
-        ),
-
-        BiomeFilter.biome()
+        )
 );
     }
         public static final ResourceKey<PlacedFeature>

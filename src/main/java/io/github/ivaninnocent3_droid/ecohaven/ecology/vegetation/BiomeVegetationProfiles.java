@@ -1,7 +1,5 @@
 package io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation;
 
-import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.*;
-
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;

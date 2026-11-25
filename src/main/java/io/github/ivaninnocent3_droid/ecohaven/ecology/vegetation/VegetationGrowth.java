@@ -12,8 +12,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.Heightmap;
 
-import java.util.List;
-
 public final class VegetationGrowth {
 
     private static final int TICK_INTERVAL = 100;

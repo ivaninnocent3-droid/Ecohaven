@@ -8,7 +8,6 @@ import java.util.Set;
 import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.VegetationFeature;
 import net.minecraft.core.Holder;
 import net.minecraft.data.worldgen.BootstrapContext;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.TemplateFeature;
