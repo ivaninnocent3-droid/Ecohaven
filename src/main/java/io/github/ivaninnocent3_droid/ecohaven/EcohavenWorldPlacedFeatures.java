@@ -12,6 +12,12 @@ import net.minecraft.world.level.levelgen.placement.BlockPredicateFilter;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
+import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
 
 public class EcohavenWorldPlacedFeatures {
 
@@ -65,5 +71,47 @@ public class EcohavenWorldPlacedFeatures {
                 PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
                 BiomeFilter.biome()
         );
+        PlacementUtils.register(
+        context,
+        REDUCED_LEAF_LITTER_PLACED_FEATURE_KEY,
+        features.getOrThrow(VANILLA_LEAF_LITTER_FEATURE_KEY),
+
+        // Half the vanilla initial placement attempts.
+        CountPlacement.of(1),
+
+        InSquarePlacement.spread(),
+        PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+
+        CountPlacement.of(32),
+        OffsetPlacement.ofTriangle(7, 3),
+
+        BlockPredicateFilter.forPredicate(
+                BlockPredicate.allOf(
+                        BlockPredicate.ONLY_IN_AIR_PREDICATE,
+                        BlockPredicate.matchesBlocks(
+                                Direction.DOWN,
+                                Blocks.GRASS_BLOCK
+                        )
+                )
+        ),
+
+        BiomeFilter.biome()
+);
     }
+        public static final ResourceKey<PlacedFeature>
+                REDUCED_LEAF_LITTER_PLACED_FEATURE_KEY =
+                ResourceKey.create(
+                        Registries.PLACED_FEATURE,
+                        Ecohaven.id("reduced_leaf_litter")
+                );
+
+        private static final ResourceKey<Feature>
+                VANILLA_LEAF_LITTER_FEATURE_KEY =
+                ResourceKey.create(
+                        Registries.FEATURE,
+                        Identifier.fromNamespaceAndPath(
+                                "minecraft",
+                                "leaf_litter"
+                        )
+                );
 }

@@ -1,5 +1,7 @@
 package io.github.ivaninnocent3_droid.ecohaven;
 
+import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.VegetationGrowth;
+
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
@@ -16,6 +18,7 @@ import io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation.VegetationFeatu
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.world.level.biome.Biome;
 
+
 public class Ecohaven implements ModInitializer {
     public static final String MOD_ID = "ecohaven";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -31,6 +34,8 @@ public class Ecohaven implements ModInitializer {
         );
 
         WoodlandSurfaceFeature.register();
+        VegetationFeature.register();
+        VegetationGrowth.register();
 
         for (EcohavenTreeProfiles.BiomeProfile profile :
         EcohavenTreeProfiles.profiles()) {
@@ -79,6 +84,13 @@ public class Ecohaven implements ModInitializer {
                                 GenerationStep.Decoration.VEGETAL_DECORATION,
                                 VegetationFeature.PLACED_FEATURE_KEY
                         );
+                        if (profile.id().equals("forest")) {
+                            generation.addFeature(
+                                    GenerationStep.Decoration.VEGETAL_DECORATION,
+                                    EcohavenWorldPlacedFeatures
+                                            .REDUCED_LEAF_LITTER_PLACED_FEATURE_KEY
+                            );
+                        }
                     }
             );
         }
