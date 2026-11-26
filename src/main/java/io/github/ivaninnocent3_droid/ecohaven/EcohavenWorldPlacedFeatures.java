@@ -17,6 +17,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
+import net.minecraft.world.level.levelgen.placement.RarityFilter;
 
 public class EcohavenWorldPlacedFeatures {
 
@@ -26,26 +27,23 @@ public class EcohavenWorldPlacedFeatures {
         for (EcohavenTreeProfiles.TreeSpawn tree :
                 EcohavenTreeProfiles.allTreeSpawns()) {
 
-            PlacementUtils.register(
-                    context,
-                    EcohavenTreeProfiles.placedFeatureKey(tree),
-                    features.getOrThrow(
-                            EcohavenTreeProfiles.featureKey(tree)
-                    ),
+        PlacementUtils.register(
+                context,
+                EcohavenTreeProfiles.placedFeatureKey(tree),
+                features.getOrThrow(
+                        EcohavenTreeProfiles.featureKey(tree)
+                ),
 
-                    net.minecraft.world.level.levelgen.placement.RarityFilter
-                            .onAverageOnceEvery(tree.chancePerChunk()),
+                treeCountPlacement(tree),
 
-                    CountPlacement.of(tree.attemptsPerChunk()),
+                InSquarePlacement.spread(),
+                PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
+                BiomeFilter.biome(),
 
-                    InSquarePlacement.spread(),
-                    PlacementUtils.HEIGHTMAP_OCEAN_FLOOR,
-                    BiomeFilter.biome(),
-
-                    BlockPredicateFilter.forPredicate(
-                            BlockPredicate.wouldSurvive(tree.groundCheck())
-                    )
-            );
+                BlockPredicateFilter.forPredicate(
+                        BlockPredicate.wouldSurvive(tree.groundCheck())
+                )
+        );
         }
 
         PlacementUtils.register(
@@ -71,31 +69,29 @@ public class EcohavenWorldPlacedFeatures {
                 BiomeFilter.biome()
         );
         PlacementUtils.register(
-        context,
-        REDUCED_LEAF_LITTER_PLACED_FEATURE_KEY,
-        features.getOrThrow(VANILLA_LEAF_LITTER_FEATURE_KEY),
+                context,
+                REDUCED_LEAF_LITTER_PLACED_FEATURE_KEY,
+                features.getOrThrow(VANILLA_LEAF_LITTER_FEATURE_KEY),
 
-        // Half the vanilla initial placement attempts.
-        CountPlacement.of(1),
+                CountPlacement.of(32),
 
-        InSquarePlacement.spread(),
-        PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
+                InSquarePlacement.spread(),
+                PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
 
-        BiomeFilter.biome(),
+                BiomeFilter.biome(),
 
-        CountPlacement.of(32),
-        OffsetPlacement.ofTriangle(7, 3),
+                OffsetPlacement.ofTriangle(7, 3),
 
-        BlockPredicateFilter.forPredicate(
-                BlockPredicate.allOf(
-                        BlockPredicate.ONLY_IN_AIR_PREDICATE,
-                        BlockPredicate.matchesBlocks(
-                                Direction.DOWN,
-                                Blocks.GRASS_BLOCK
+                BlockPredicateFilter.forPredicate(
+                        BlockPredicate.allOf(
+                                BlockPredicate.ONLY_IN_AIR_PREDICATE,
+                                BlockPredicate.matchesBlocks(
+                                        Direction.DOWN,
+                                        Blocks.GRASS_BLOCK
+                                )
                         )
                 )
-        )
-);
+        );
     }
         public static final ResourceKey<PlacedFeature>
                 REDUCED_LEAF_LITTER_PLACED_FEATURE_KEY =
@@ -113,4 +109,17 @@ public class EcohavenWorldPlacedFeatures {
                                 "leaf_litter"
                         )
                 );
+        private static net.minecraft.world.level.levelgen.placement.PlacementModifier
+                treeCountPlacement(EcohavenTreeProfiles.TreeSpawn tree) {
+
+                if (tree.extraChance() == 0.0F) {
+                        return CountPlacement.of(tree.baseCount());
+                }
+
+                return PlacementUtils.countExtra(
+                        tree.baseCount(),
+                        tree.extraChance(),
+                        tree.extraCount()
+                );
+        }
 }
