@@ -157,4 +157,12 @@ public final class PlantSpeciesRegistry {
                     PlantGrowthForm.DOUBLE_BLOCK,
                     5, 0.40F, 0.50F, 0.55F, 0.012F
             );
+    public static final PlantSpecies WILDFLOWERS =
+        new PlantSpecies(
+                "wildflowers",
+                Blocks.WILDFLOWERS,
+                PlantRole.SPECIAL,
+                PlantGrowthForm.SINGLE_BLOCK,
+                4, 0.45F, 0.50F, 0.55F, 0.015F
+        );
 }

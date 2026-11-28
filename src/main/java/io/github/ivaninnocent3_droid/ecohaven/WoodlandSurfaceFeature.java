@@ -39,7 +39,7 @@ public final class WoodlandSurfaceFeature implements Feature {
                     Ecohaven.id("woodland_surface")
             );
 
-    private static final float PATCHED_GRASS_CHANCE = 0.85F;
+    private static final float PATCHED_GRASS_CHANCE = 0.90F;
     private static final int COVER_SCAN_HEIGHT = 16;
 
     public static void register() {

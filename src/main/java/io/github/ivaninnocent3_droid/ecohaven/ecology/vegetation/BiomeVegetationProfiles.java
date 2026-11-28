@@ -81,7 +81,8 @@ public final class BiomeVegetationProfiles {
                         PlantSpeciesRegistry.LARGE_FERN,
                         PlantSpeciesRegistry.DANDELION,
                         PlantSpeciesRegistry.OXEYE_DAISY,
-                        PlantSpeciesRegistry.LILY_OF_THE_VALLEY
+                        PlantSpeciesRegistry.LILY_OF_THE_VALLEY,
+                        PlantSpeciesRegistry.WILDFLOWERS
                 ),
                 14,
                 0.12F,
@@ -372,6 +373,38 @@ public final class BiomeVegetationProfiles {
                 12,
                 0.06F,
                 0.25F
+        ),
+
+        profile(
+                "old_growth_birch_forest",
+                "old_growth_birch_forest",
+                List.of(
+                        PlantSpeciesRegistry.SHORT_GRASS,
+                        PlantSpeciesRegistry.FERN,
+                        PlantSpeciesRegistry.LARGE_FERN,
+                        PlantSpeciesRegistry.DANDELION,
+                        PlantSpeciesRegistry.OXEYE_DAISY,
+                        PlantSpeciesRegistry.LILY_OF_THE_VALLEY,
+                        PlantSpeciesRegistry.WILDFLOWERS
+                ),
+                14,
+                0.12F,
+                0.30F
+        ),
+        profile(
+                "dark_forest",
+                "dark_forest",
+                List.of(
+                        PlantSpeciesRegistry.FERN,
+                        PlantSpeciesRegistry.LARGE_FERN,
+                        PlantSpeciesRegistry.SHORT_GRASS,
+                        PlantSpeciesRegistry.DANDELION,
+                        PlantSpeciesRegistry.POPPY,
+                        PlantSpeciesRegistry.LILY_OF_THE_VALLEY
+                ),
+                18,
+                0.16F,
+                0.30F
         )
     );
 
