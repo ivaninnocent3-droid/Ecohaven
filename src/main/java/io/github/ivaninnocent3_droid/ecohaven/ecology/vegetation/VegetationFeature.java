@@ -1,6 +1,9 @@
 package io.github.ivaninnocent3_droid.ecohaven.ecology.vegetation;
 
+import java.util.List;
+
 import com.mojang.serialization.MapCodec;
+
 import io.github.ivaninnocent3_droid.ecohaven.Ecohaven;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -10,16 +13,14 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.DoublePlantBlock;
-import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-
-import java.util.List;
 
 /**
  * Generates natural ground vegetation according to the vegetation
@@ -52,16 +53,29 @@ public final class VegetationFeature implements Feature {
      * Vegetation is generated potentially millions of times in a world,
      * so large-radius searches would become expensive very quickly.
      */
-    private static final int CANOPY_SCAN_HEIGHT = 12;
-    private static final int MOISTURE_SCAN_RADIUS = 4;
-    private static final int MIN_PATCH_RADIUS = 3;
-    private static final int MAX_PATCH_RADIUS = 8;
-    private static final int MIN_PATCH_ATTEMPTS = 5;
-    private static final int MAX_PATCH_ATTEMPTS = 14;
-    private static final float PATCH_DOMINANCE = 0.80F;
-    private static final int SPREAD_ATTEMPTS = 6;
-    private static final int SPREAD_SEARCH_RADIUS = 4;
-    private static final int TERRAIN_SCAN_RADIUS = 2;
+        private static final int MIN_PATCH_RADIUS = 6;
+        private static final int MAX_PATCH_RADIUS = 10;
+
+        private static final int MIN_PATCH_ATTEMPTS = 18;
+        private static final int MAX_PATCH_ATTEMPTS = 32;
+
+        private static final int MAX_PATCH_SPECIES = 3;
+
+        private static final float PATCH_DOMINANCE = 0.68F;
+
+        /*
+        * Flowers within one cluster should not sit directly next to
+        * one another. This is deliberately a soft spacing rule rather
+        * than a fixed grid.
+        */
+        private static final int MIN_FLOWER_SPACING_SQUARED = 6;
+
+        private static final int CANOPY_SCAN_HEIGHT = 12;
+        private static final int MOISTURE_SCAN_RADIUS = 4;
+        private static final int TERRAIN_SCAN_RADIUS = 2;
+
+        private static final int SPREAD_ATTEMPTS = 6;
+        private static final int SPREAD_SEARCH_RADIUS = 8;
 
     public VegetationFeature() {
     }
@@ -73,6 +87,179 @@ public final class VegetationFeature implements Feature {
                 CODEC
         );
     }
+
+private static boolean placePatch(
+        WorldGenLevel level,
+        VegetationProfile profile,
+        VegetationPatch patch,
+        RandomSource random,
+        int startX,
+        int startZ
+) {
+    if (patch == null) {
+        return false;
+    }
+    int centerX =
+            startX + random.nextInt(16);
+
+    int centerZ =
+            startZ + random.nextInt(16);
+
+    int attempts =
+            MIN_PATCH_ATTEMPTS
+            + random.nextInt(
+                    MAX_PATCH_ATTEMPTS - MIN_PATCH_ATTEMPTS + 1
+            );
+
+    /*
+     * Keep track of successful flower positions so the patch
+     * develops visible breathing room.
+     */
+    java.util.ArrayList<BlockPos> placedFlowers =
+            new java.util.ArrayList<>();
+
+    boolean changed = false;
+
+    for (int attempt = 0;
+         attempt < attempts;
+         attempt++) {
+
+        int dx =
+                random.nextInt(
+                        patch.radius() * 2 + 1
+                ) - patch.radius();
+
+        int dz =
+                random.nextInt(
+                        patch.radius() * 2 + 1
+                ) - patch.radius();
+
+        if (dx * dx + dz * dz
+                > patch.radius() * patch.radius()) {
+            continue;
+        }
+
+        int x = centerX + dx;
+        int z = centerZ + dz;
+
+        int surfaceY =
+                level.getHeight(
+                        Heightmap.Types.OCEAN_FLOOR_WG,
+                        x,
+                        z
+                ) - 1;
+
+        BlockPos groundPos =
+                new BlockPos(x, surfaceY, z);
+
+        /*
+         * Check spacing before doing the more expensive
+         * ecological calculations.
+         */
+        boolean tooClose = false;
+
+        for (BlockPos existing : placedFlowers) {
+
+            int distanceX =
+                    existing.getX() - x;
+
+            int distanceZ =
+                    existing.getZ() - z;
+
+            if (distanceX * distanceX
+                    + distanceZ * distanceZ
+                    < MIN_FLOWER_SPACING_SQUARED) {
+
+                tooClose = true;
+                break;
+            }
+        }
+
+        if (tooClose) {
+            continue;
+        }
+
+        /*
+         * Recalculate environmental conditions at the actual
+         * placement position.
+         *
+         * This prevents a flower selected at the cluster centre
+         * from being forced into an unsuitable part of the patch.
+         */
+        float shade =
+                calculateShade(level, groundPos);
+
+        float moisture =
+                calculateMoisture(level, groundPos);
+
+        float exposure =
+                calculateExposure(level, groundPos);
+
+        PlantSpecies species;
+
+        if (random.nextFloat() < patch.dominance()) {
+
+        PlantSpecies dominant = patch.dominantSpecies();
+
+        // The dominant flower must still be suitable at this exact position.
+        if (ecologicalWeight(
+                dominant,
+                shade,
+                moisture,
+                exposure
+        ) > 0) {
+                species = dominant;
+        } else {
+                // If the dominant flower does not fit here, choose
+                // another suitable flower from the patch palette.
+                species = selectSpecies(
+                        patch.palette(),
+                        shade,
+                        moisture,
+                        exposure,
+                        random
+                );
+        }
+
+        } else {
+
+        /*
+        * Secondary flowers are chosen ONLY from the small
+        * environmentally appropriate cluster palette.
+        */
+        species = selectSpecies(
+                patch.palette(),
+                shade,
+                moisture,
+                exposure,
+                random
+        );
+        }
+
+        if (species == null) {
+            continue;
+        }
+
+        boolean placed =
+                placeVegetation(
+                        level,
+                        profile,
+                        random,
+                        groundPos,
+                        species
+                );
+
+        if (placed) {
+            placedFlowers.add(
+                    groundPos.above()
+            );
+
+            changed = true;
+        }
+    }
+
+    return changed;
+}
 
     @Override
     public MapCodec<VegetationFeature> codec() {
@@ -124,11 +311,21 @@ public final class VegetationFeature implements Feature {
         }
 
         // Occasional dominant plant community.
-        if (random.nextFloat() < profile.dominantPatchChance()) {
+        if (random.nextFloat() < profile.dominantPatchChance() * 0.5F) {
 
-        VegetationPatch patch = createPatch(
+int patchCenterX =
+        startX + random.nextInt(16);
+
+int patchCenterZ =
+        startZ + random.nextInt(16);
+
+VegetationPatch patch =
+        createPatch(
+                level,
                 profile,
-                random
+                random,
+                patchCenterX,
+                patchCenterZ
         );
 
         changed |= placePatch(
@@ -277,88 +474,37 @@ private static PlantSpecies selectSpecies(
 ) {
     int totalWeight = 0;
 
-    // First pass: calculate the total ecological selection weight.
     for (PlantSpecies plant : species) {
 
-        float shadeMatch = preferenceMatch(
+        int weight = ecologicalWeight(
+                plant,
                 shade,
-                plant.shadeTolerance()
-        );
-
-        float moistureMatch = preferenceMatch(
                 moisture,
-                plant.moisturePreference()
+                exposure
         );
 
-        float exposureMatch = preferenceMatch(
-                exposure,
-                plant.exposurePreference()
-        );
-
-        float roleMatch = roleSuitability(
-                plant.role(),
-                shade
-        );
-
-        float suitability =
-                shadeMatch
-                * moistureMatch
-                * exposureMatch
-                * roleMatch;
-
-        if (suitability <= 0.0F) {
-            continue;
-        }
-
-        totalWeight += Math.max(
-                1,
-                Math.round(plant.weight() * suitability)
-        );
+        totalWeight += weight;
     }
 
     if (totalWeight <= 0) {
         return null;
     }
 
-    int selection = random.nextInt(totalWeight);
+    int selection =
+            random.nextInt(totalWeight);
 
-    // Second pass: select using exactly the same weights.
     for (PlantSpecies plant : species) {
 
-        float shadeMatch = preferenceMatch(
+        int weight = ecologicalWeight(
+                plant,
                 shade,
-                plant.shadeTolerance()
-        );
-
-        float moistureMatch = preferenceMatch(
                 moisture,
-                plant.moisturePreference()
+                exposure
         );
 
-        float exposureMatch = preferenceMatch(
-                exposure,
-                plant.exposurePreference()
-        );
-
-        float roleMatch = roleSuitability(
-                plant.role(),
-                shade
-        );
-
-        float suitability =
-                shadeMatch
-                * moistureMatch
-                * exposureMatch
-                * roleMatch;
-
-        if (suitability <= 0.0F) {
+        if (weight <= 0) {
             continue;
         }
-
-        int weight = Math.max(
-                1,
-                Math.round(plant.weight() * suitability)
-        );
 
         if (selection < weight) {
             return plant;
@@ -368,6 +514,54 @@ private static PlantSpecies selectSpecies(
     }
 
     return null;
+}
+
+private static int ecologicalWeight(
+        PlantSpecies plant,
+        float shade,
+        float moisture,
+        float exposure
+) {
+    float shadeMatch =
+            preferenceMatch(
+                    shade,
+                    plant.shadeTolerance()
+            );
+
+    float moistureMatch =
+            preferenceMatch(
+                    moisture,
+                    plant.moisturePreference()
+            );
+
+    float exposureMatch =
+            preferenceMatch(
+                    exposure,
+                    plant.exposurePreference()
+            );
+
+    float roleMatch =
+            roleSuitability(
+                    plant.role(),
+                    shade
+            );
+
+    float suitability =
+            shadeMatch
+            * moistureMatch
+            * exposureMatch
+            * roleMatch;
+
+    if (suitability <= 0.0F) {
+        return 0;
+    }
+
+    return Math.max(
+            1,
+            Math.round(
+                    plant.weight() * suitability
+            )
+    );
 }
 
 /**
@@ -411,11 +605,117 @@ private static float roleSuitability(
     }
 
 private static VegetationPatch createPatch(
+        WorldGenLevel level,
         VegetationProfile profile,
-        RandomSource random
+        RandomSource random,
+        int centerX,
+        int centerZ
 ) {
+    int centerY = level.getHeight(
+            Heightmap.Types.OCEAN_FLOOR_WG,
+            centerX,
+            centerZ
+    ) - 1;
+
+    BlockPos centerGround =
+            new BlockPos(centerX, centerY, centerZ);
+
+    BlockState centerGroundState =
+            level.getBlockState(centerGround);
+
+    if (!isSuitableGround(centerGroundState)) {
+        return null;
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * Environmental conditions are calculated BEFORE choosing
+     * any flower species.
+     */
+    float shade =
+            calculateShade(level, centerGround);
+
+    float moisture =
+            calculateMoisture(level, centerGround);
+
+    float exposure =
+            calculateExposure(level, centerGround);
+
+    List<PlantSpecies> viableFlowers =
+            profile.species()
+                    .stream()
+                    .filter(VegetationFeature::isFlowerSpecies)
+                    .filter(species ->
+                            ecologicalWeight(
+                                    species,
+                                    shade,
+                                    moisture,
+                                    exposure
+                            ) > 0.0F
+                    )
+                    .toList();
+
+    if (viableFlowers.isEmpty()) {
+        return null;
+    }
+
+    /*
+     * Choose the dominant flower from the environmentally
+     * suitable species.
+     */
     PlantSpecies dominant =
-            selectPatchSpecies(profile.species(), random);
+            selectSpecies(
+                    viableFlowers,
+                    shade,
+                    moisture,
+                    exposure,
+                    random
+            );
+
+    if (dominant == null) {
+        return null;
+    }
+
+    /*
+     * Build a deliberately small palette.
+     *
+     * The first species is always the dominant one. Additional
+     * species are selected from the same environmentally viable
+     * pool, never from the entire biome flower list.
+     */
+    java.util.ArrayList<PlantSpecies> palette =
+            new java.util.ArrayList<>();
+
+    palette.add(dominant);
+
+    int paletteSize =
+            1 + random.nextInt(
+                    Math.min(
+                            MAX_PATCH_SPECIES,
+                            viableFlowers.size()
+                    )
+            );
+
+    while (palette.size() < paletteSize) {
+
+        PlantSpecies candidate =
+                selectSpecies(
+                        viableFlowers,
+                        shade,
+                        moisture,
+                        exposure,
+                        random
+                );
+
+        if (candidate == null) {
+            break;
+        }
+
+        if (!palette.contains(candidate)) {
+            palette.add(candidate);
+        }
+    }
 
     int radius =
             MIN_PATCH_RADIUS
@@ -424,93 +724,17 @@ private static VegetationPatch createPatch(
             );
 
     return new VegetationPatch(
+            palette,
             dominant,
             radius,
             PATCH_DOMINANCE
     );
 }
 
-private static PlantSpecies selectPatchSpecies(
-        List<PlantSpecies> species,
-        RandomSource random
+private static boolean isFlowerSpecies(
+        PlantSpecies species
 ) {
-    int totalWeight = 0;
-
-    for (PlantSpecies plant : species) {
-        totalWeight += plant.weight();
-    }
-
-    int selection = random.nextInt(totalWeight);
-
-    for (PlantSpecies plant : species) {
-        if (selection < plant.weight()) {
-            return plant;
-        }
-
-        selection -= plant.weight();
-    }
-
-    return species.getLast();
-}
-
-private static boolean placePatch(
-        WorldGenLevel level,
-        VegetationProfile profile,
-        VegetationPatch patch,
-        RandomSource random,
-        int startX,
-        int startZ
-) {
-    int centerX = startX + random.nextInt(16);
-    int centerZ = startZ + random.nextInt(16);
-
-    int attempts =
-            MIN_PATCH_ATTEMPTS
-            + random.nextInt(
-                    MAX_PATCH_ATTEMPTS - MIN_PATCH_ATTEMPTS + 1
-            );
-
-    boolean changed = false;
-
-    for (int attempt = 0; attempt < attempts; attempt++) {
-
-        int dx = random.nextInt(
-                patch.radius() * 2 + 1
-        ) - patch.radius();
-
-        int dz = random.nextInt(
-                patch.radius() * 2 + 1
-        ) - patch.radius();
-
-        if (dx * dx + dz * dz
-                > patch.radius() * patch.radius()) {
-            continue;
-        }
-
-        int x = centerX + dx;
-        int z = centerZ + dz;
-
-        float dominantChance =
-                patch.dominance();
-
-        PlantSpecies species;
-
-        if (random.nextFloat() < dominantChance) {
-        species = patch.dominantSpecies();
-        } else {
-        species = null;
-        }
-
-        changed |= placeVegetation(
-                level,
-                profile,
-                random,
-                new BlockPos(x, 0, z),
-                species
-        );
-    }
-
-    return changed;
+    return species.role() == PlantRole.SPECIAL;
 }
 
 private static boolean placeVegetation(
@@ -571,9 +795,16 @@ private static boolean placeVegetation(
         );
     }
 
-    if (species == null) {
-        return false;
-    }
+if (species == null) {
+    return false;
+}
+
+// Flowers are intentionally less common than grass and ferns.
+if (forcedSpecies == null
+        && species.role() == PlantRole.SPECIAL
+        && random.nextFloat() < 0.5F) {
+    return false;
+}
 
 BlockState plantState =
         species.block().defaultBlockState();
